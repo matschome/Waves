@@ -10,7 +10,6 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
       """waves {
         |  network.file = "xxx"
         |  fees {
-        |    payment.WAVES = 100000
         |    issue.WAVES = 100000000
         |    transfer.WAVES = 100000
         |    reissue.WAVES = 100000
@@ -22,9 +21,8 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
       """.stripMargin).resolve()
 
     val settings = FeesSettings.fromConfig(config)
-    settings.fees.size should be(6)
+    settings.fees.size should be(5)
 
-    settings.fees(2) should be(List(FeeSettings("WAVES", 100000)))
     settings.fees(3) should be(List(FeeSettings("WAVES", 100000000)))
     settings.fees(4) should be(List(FeeSettings("WAVES", 100000)))
     settings.fees(5) should be(List(FeeSettings("WAVES", 100000)))
@@ -35,9 +33,6 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
   it should "combine read few fees for one transaction type" in {
     val config = ConfigFactory.parseString(
       """waves.fees {
-        |  payment {
-        |    WAVES0 = 0
-        |  }
         |  issue {
         |    WAVES1 = 111
         |    WAVES2 = 222
@@ -50,8 +45,7 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
       """.stripMargin).resolve()
 
     val settings = FeesSettings.fromConfig(config)
-    settings.fees.size should be(3)
-    settings.fees(2).toSet should equal(Set(FeeSettings("WAVES0", 0)))
+    settings.fees.size should be(2)
     settings.fees(3).toSet should equal(Set(FeeSettings("WAVES1", 111), FeeSettings("WAVES2", 222), FeeSettings("WAVES3", 333)))
     settings.fees(4).toSet should equal(Set(FeeSettings("WAVES4", 444)))
   }
@@ -66,13 +60,11 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
   it should "override values" in {
     val config = ConfigFactory.parseString(
       """waves.fees {
-        |  payment.WAVES1 = 1111
         |  reissue.WAVES5 = 0
         |}
       """.stripMargin).withFallback(
       ConfigFactory.parseString(
         """waves.fees {
-          |  payment.WAVES = 100000
           |  issue.WAVES = 100000000
           |  transfer.WAVES = 100000
           |  reissue.WAVES = 100000
@@ -83,13 +75,12 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
     ).resolve()
 
     val settings = FeesSettings.fromConfig(config)
-    settings.fees.size should be(6)
-    settings.fees(2).toSet should equal(Set(FeeSettings("WAVES", 100000), FeeSettings("WAVES1", 1111)))
+    settings.fees.size should be(5)
     settings.fees(5).toSet should equal(Set(FeeSettings("WAVES", 100000), FeeSettings("WAVES5", 0)))
   }
 
   it should "fail on incorrect long values" in {
-    val config = ConfigFactory.parseString("waves.fees.payment.WAVES=N/A").resolve()
+    val config = ConfigFactory.parseString("waves.fees.transfer.WAVES=N/A").resolve()
 
     intercept[BadValue] {
       FeesSettings.fromConfig(config)
@@ -109,9 +100,6 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
     val config = ConfigFactory.parseString(
       """
         |waves.fees {
-        |  payment {
-        |    WAVES = 100000
-        |  }
         |  issue {
         |    WAVES = 100000000
         |  }
@@ -140,8 +128,7 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
         |}
       """.stripMargin).withFallback(defaultConfig).resolve()
     val settings = FeesSettings.fromConfig(config)
-    settings.fees.size should be(9)
-    settings.fees(2).toSet should equal(Set(FeeSettings("WAVES", 100000)))
+    settings.fees.size should be(8)
     settings.fees(3).toSet should equal(Set(FeeSettings("WAVES", 100000000)))
     settings.fees(4).toSet should equal(Set(FeeSettings("WAVES", 100000), FeeSettings("6MPKrD5B7GrfbciHECg1MwdvRUhRETApgNZspreBJ8JL", 1)))
     settings.fees(5).toSet should equal(Set(FeeSettings("WAVES", 100000)))
@@ -149,6 +136,6 @@ class FeesSettingsSpecification extends FlatSpec with Matchers {
     settings.fees(7).toSet should equal(Set(FeeSettings("WAVES", 100000)))
     settings.fees(8).toSet should equal(Set(FeeSettings("WAVES", 100000)))
     settings.fees(9).toSet should equal(Set(FeeSettings("WAVES", 100000)))
-    settings.fees(10).toSet should equal(Set(FeeSettings("WAVES", 100000)))
+    settings.fees(10  ).toSet should equal(Set(FeeSettings("WAVES", 100000)))
   }
 }

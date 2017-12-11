@@ -16,9 +16,6 @@ class FeeCalculatorSpecification extends PropSpec with PropertyChecks with Match
   private val configString =
     """waves {
       |  fees {
-      |    payment {
-      |      WAVES = 100000
-      |    }
       |    issue {
       |      WAVES = 100000000
       |    }
@@ -83,13 +80,6 @@ class FeeCalculatorSpecification extends PropSpec with PropertyChecks with Match
 
     feeCalculator.enoughFee(tx1) shouldBe a[Right[_,_]]
     feeCalculator.enoughFee(tx2) shouldBe a[Left[_,_]]
-  }
-
-  property("Payment transaction ") {
-    val feeCalc = new FeeCalculator(mySettings)
-    forAll(paymentGen) { tx: PaymentTransaction =>
-      feeCalc.enoughFee(tx) shouldBeRightIf (tx.fee >= 100000)
-    }
   }
 
   property("Issue transaction ") {

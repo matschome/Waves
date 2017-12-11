@@ -73,23 +73,6 @@ trait TransactionGen {
       Gen.oneOf(Gen.const(None), a2bytesGen).map(a2 => AssetPair(a1, a2.map(ByteStr(_))))
   }
 
-  val paymentGen: Gen[PaymentTransaction] = for {
-    sender: PrivateKeyAccount <- accountGen
-    recipient: PrivateKeyAccount <- accountGen
-    tx <- paymentGeneratorP(sender, recipient)
-  } yield tx
-
-  val selfPaymentGen: Gen[PaymentTransaction] = accountGen.flatMap(acc => paymentGeneratorP(acc, acc))
-
-  def paymentGeneratorP(sender: PrivateKeyAccount, recipient: PrivateKeyAccount): Gen[PaymentTransaction] =
-    timestampGen.flatMap(ts => paymentGeneratorP(ts, sender, recipient))
-
-  def paymentGeneratorP(timestamp: Long, sender: PrivateKeyAccount, recipient: PrivateKeyAccount): Gen[PaymentTransaction] = for {
-    amount: Long <- positiveLongGen
-    fee: Long <- smallFeeGen
-  } yield PaymentTransaction.create(sender, recipient, amount, fee, timestamp).right.get
-
-
   private val leaseParamGen = for {
     sender <- accountGen
     amount <- positiveLongGen
