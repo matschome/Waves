@@ -106,22 +106,39 @@ object Wallet extends ScorexLogging {
     override def generateNewAccounts(howMany: Int): Seq[PrivateKeyAccount] =
       (1 to howMany).flatMap(_ => generateNewAccount())
 
-    override def generateNewAccount(): Option[PrivateKeyAccount] = lock {
-      val nonce = getAndIncrementNonce()
-      val account = Wallet.generateNewAccount(seed, nonce)
+    override def generateNewAccount(): Option[PrivateKeyAccount] = {
+      log.debug(s"==> generateNewAccount")
+      lock {
+        log.debug("==> generateNewAccount - lock")
+        val nonce = getAndIncrementNonce()
+        val account = Wallet.generateNewAccount(seed, nonce)
+        log.debug(s"==> after generateNewAccount: $account")
 
-      val address = account.address
-      val created = if (!accountsCache.contains(address)) {
-        accountsCache += account.address -> account
-        walletData = walletData.copy(accountSeeds = walletData.accountSeeds + ByteStr(account.seed))
-        save()
-        true
-      } else false
+        val address = account.address
+        val created = if (!accountsCache.contains(address)) {
+          log.debug(s"==> created if (!false)")
+          accountsCache += account.address -> account
+          walletData = walletData.copy(accountSeeds = walletData.accountSeeds + ByteStr(account.seed))
+          log.debug(s"==> before save")
+          try {
+            save()
+            log.debug(s"==> after save")
+          } catch {
+            case NonFatal(e) =>
+              log.error("Can't save file", e)
+              throw e
+          }
+          true
+        } else false
 
-      if (created) {
-        log.info("Added account #" + privateKeyAccounts.size)
-        Some(account)
-      } else None
+        val r = if (created) {
+          log.info("Added account #" + privateKeyAccounts.size)
+          Some(account)
+        } else None
+
+        log.debug(s"==> generateNewAccount - r: $r")
+        r
+      }
     }
 
     override def deleteAccount(account: PrivateKeyAccount): Boolean = lock {
@@ -139,7 +156,7 @@ object Wallet extends ScorexLogging {
 
     override def nonce: Int = walletData.nonce
 
-    private def getAndIncrementNonce(): Int = lock {
+    private def getAndIncrementNonce(): Int = {
       val r = walletData.nonce
       walletData = walletData.copy(nonce = walletData.nonce + 1)
       r

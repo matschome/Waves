@@ -15,6 +15,7 @@ import scorex.crypto.encode.Base58
 import scorex.transaction.PoSCalc
 import scorex.wallet.Wallet
 
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 @Path("/addresses")
@@ -224,9 +225,22 @@ case class AddressApiRoute(settings: RestAPISettings, wallet: Wallet, state: Sta
   @Path("/")
   @ApiOperation(value = "Create", notes = "Create a new account in the wallet(if it exists)", httpMethod = "POST")
   def create: Route = (path("addresses") & post & withAuth) {
-    wallet.generateNewAccount() match {
-      case Some(pka) => complete(Json.obj("address" -> pka.address))
-      case None => complete(Unknown)
+    println(s"==> POST /addresses")
+    try {
+      wallet.generateNewAccount() match {
+        case Some(pka) =>
+          println(s"==> end with Some($pka)")
+          val j = Json.obj("address" -> pka.address)
+          println(s"==> end with j: $j")
+          complete(j)
+        case None =>
+          println("==> end with None")
+          complete(Unknown)
+      }
+    } catch {
+      case NonFatal(e) =>
+        println(s"ERROR: ${e.getMessage}\n${e.getStackTrace.mkString("\n")}")
+        complete(Unknown)
     }
   }
 
